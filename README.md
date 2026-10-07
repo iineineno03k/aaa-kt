@@ -32,7 +32,7 @@ So a test cannot assert before acting, cannot act twice, and shows what it prepa
 
 ```kotlin
 dependencies {
-    testImplementation("io.github.iineineno03k:aaa-kt:<version>")
+    testImplementation("io.github.iineineno03k:aaa-kt:0.1.1")
 }
 ```
 

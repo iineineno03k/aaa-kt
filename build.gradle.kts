@@ -21,6 +21,8 @@ dependencies {
 kotlin {
     explicitApi()
     jvmToolchain(21)
+    // The published POM depends on this stdlib, and a Kotlin 2.0 consumer cannot read a newer one.
+    coreLibrariesVersion = "2.0.0"
     compilerOptions {
         // Consumers on older compilers and JVMs can still read the published artifact.
         jvmTarget = JvmTarget.JVM_17
