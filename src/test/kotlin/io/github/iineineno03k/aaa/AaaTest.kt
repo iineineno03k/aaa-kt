@@ -88,4 +88,45 @@ class AaaTest {
         }.assert { result ->
             assertIs<IllegalStateException>(result.exceptionOrNull())
         }
+
+    @Test
+    fun `actThrows passes the expected exception to assert`() =
+        arrange {
+            -1
+        }.actThrows<IllegalArgumentException> {
+            require(this >= 0) { "negative: $this" }
+        }.assert { exception ->
+            assertEquals("negative: -1", exception.message)
+            assertEquals(-1, this)
+        }
+
+    @Test
+    fun `actThrows can start a test without arrange`() =
+        actThrows<IllegalStateException> {
+            error("boom")
+        }.assert { exception ->
+            assertEquals("boom", exception.message)
+        }
+
+    @Test
+    fun `actThrows lets an exception of another type propagate`() {
+        val propagated = runCatching {
+            actThrows<IllegalArgumentException> { error("other") }
+        }.exceptionOrNull()
+
+        assertIs<IllegalStateException>(propagated)
+    }
+
+    @Test
+    fun `actThrows fails when nothing is thrown`() {
+        val failure = runCatching {
+            actThrows<IllegalArgumentException> { 42 }
+        }.exceptionOrNull()
+
+        assertIs<AssertionError>(failure)
+        assertEquals(
+            "Expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown.",
+            failure.message
+        )
+    }
 }
