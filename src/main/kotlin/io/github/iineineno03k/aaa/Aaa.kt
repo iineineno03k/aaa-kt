@@ -31,6 +31,20 @@ public inline fun <A> arrange(block: () -> A): Arranged<A> = Arranged(block())
  */
 public inline fun <R> act(block: () -> R): Acted<Unit, R> = Acted(Unit, block())
 
+/**
+ * Starts a test with an Act phase that is expected to throw [T], for tests that need no arrangement.
+ *
+ * The thrown [T] becomes the argument of [Acted.assert]. Any other exception propagates unchanged, and
+ * completing without an exception fails the test with an [AssertionError].
+ *
+ * ```
+ * actThrows<IllegalArgumentException> { Money(-1) }
+ *     .assert { exception -> assertEquals("amount must not be negative", exception.message) }
+ * ```
+ */
+public inline fun <reified T : Throwable> actThrows(block: () -> Any?): Acted<Unit, T> =
+    Acted(Unit, catchExpected<T> { block() })
+
 /** The outcome of the Arrange phase. The only way forward is [act]. */
 public class Arranged<out A>
     @PublishedApi
@@ -39,6 +53,15 @@ public class Arranged<out A>
     ) {
         /** Runs the code under test once, with the arranged value as the receiver. */
         public inline fun <R> act(block: A.() -> R): Acted<A, R> = Acted(arranged, arranged.block())
+
+        /**
+         * Runs the code under test once, with the arranged value as the receiver, expecting it to throw [T].
+         *
+         * The thrown [T] becomes the argument of [Acted.assert]. Any other exception propagates unchanged, and
+         * completing without an exception fails the test with an [AssertionError].
+         */
+        public inline fun <reified T : Throwable> actThrows(block: A.() -> Any?): Acted<A, T> =
+            Acted(arranged, catchExpected<T> { arranged.block() })
     }
 
 /** The outcome of the Act phase. The only way forward is [assert]. */
@@ -53,3 +76,15 @@ public class Acted<out A, out R>
             arranged.block(result)
         }
     }
+
+/** Runs [block] and returns the [T] it throws. Other exceptions propagate; no exception is an [AssertionError]. */
+@PublishedApi
+internal inline fun <reified T : Throwable> catchExpected(block: () -> Unit): T {
+    try {
+        block()
+    } catch (thrown: Throwable) {
+        if (thrown is T) return thrown
+        throw thrown
+    }
+    throw AssertionError("Expected ${T::class.java.name} to be thrown, but nothing was thrown.")
+}

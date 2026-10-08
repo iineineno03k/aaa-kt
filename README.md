@@ -68,13 +68,21 @@ fun `loads the user`() =
 
 ### Exceptions
 
-Capture the failure in `act` and verify it in `assert`.
+Use `actThrows` when the code under test is expected to throw. The exception becomes the argument of `assert`; an exception of another type propagates, and completing normally fails the test.
 
 ```kotlin
 @Test
 fun `rejects a negative amount`() =
-    act { runCatching { Money(-1) } }
-        .assert { result -> assertIs<IllegalArgumentException>(result.exceptionOrNull()) }
+    actThrows<IllegalArgumentException> { Money(-1) }
+        .assert { exception -> assertEquals("amount must not be negative", exception.message) }
+```
+
+It is also available after `arrange`:
+
+```kotlin
+arrange { -1 }
+    .actThrows<IllegalArgumentException> { Money(this) }
+    .assert { exception -> assertEquals("amount must not be negative", exception.message) }
 ```
 
 ## Limitations
